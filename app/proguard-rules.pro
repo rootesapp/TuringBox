@@ -33,5 +33,25 @@
 #-keepclassmembers public class com.android.vending.licensing.ILicensingService
 #-keepclassmembers class android.support.** {*;}
 -dontwarn org.slf4j.impl.StaticLoggerBinder
+# 忽略 Conscrypt 相关类的警告
+-dontwarn com.android.org.conscrypt.**
+-dontwarn org.conscrypt.**
+
+# 忽略 BouncyCastle 相关类的警告
+-dontwarn org.bouncycastle.**
+
+# 忽略 OpenJSSE 相关类的警告
+-dontwarn org.openjsse.**
+
+# 忽略 sun.security.util.ObjectIdentifier 警告
+-dontwarn sun.security.util.ObjectIdentifier
+
+# 忽略 SSLParametersImpl 类相关警告
+-dontwarn org.apache.harmony.xnet.provider.jsse.SSLParametersImpl
+-dontwarn com.android.org.conscrypt.SSLParametersImpl
+-dontwarn org.bouncycastle.jsse.BCSSLParameters
+-dontwarn org.bouncycastle.jsse.BCSSLSocket
+-dontwarn org.bouncycastle.jsse.provider.BouncyCastleJsseProvider
+
 
 -keep class io.github.lumyuan.turingbox.common.model.**{*;}
