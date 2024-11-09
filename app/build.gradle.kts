@@ -32,10 +32,8 @@ android {
     defaultConfig {
         applicationId = "io.github.lumyuan.turingbox"
         minSdk = 21
-
         val appVersionCode = dateFormat.format(Date()).trim().toLong()
 
-//        @SuppressLint("ExpiredTargetSdkVersion")
         @SuppressLint("EditedTargetSdkVersion")
         targetSdk = 33
         versionCode = appVersionCode.toInt()
@@ -99,6 +97,8 @@ android {
     }
     buildFeatures {
         compose = true
+        // Enable Material3 for dynamic theme (Material You)
+        materialYou = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -119,6 +119,7 @@ android {
 
 dependencies {
 
+    // Core and Compose dependencies
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
@@ -127,13 +128,16 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.ui)
     implementation(libs.ui.graphics)
-implementation "androidx.compose.material3:material3:$compose_version"
-  
+    implementation("androidx.compose.material3:material3:1.0.0") // Material3 for Android 12 UI features
+
+    // OkHttp dependencies
+    implementation("com.squareup.okhttp3:okhttp:4.10.0") // OkHttp version (use the latest)
+
+    // Compose UI Testing and Preview
     implementation(libs.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.windowSizeClass)
     implementation(libs.constraint.layout)
-    implementation(platform(libs.compose.bom))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -143,10 +147,13 @@ implementation "androidx.compose.material3:material3:$compose_version"
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
 
+    // ImmersionBar for status bar and navigation bar styling
     implementation(libs.immersionbar.ui)
     implementation(libs.immersionbar.ui.ktx)
 
+    // JNI
     implementation(project(":TuringBoxJNI"))
 
+    // Gson for JSON parsing
     implementation(libs.gson)
 }
