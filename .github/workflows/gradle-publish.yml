@@ -1,0 +1,53 @@
+name: Android Jetpack Compose Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出代码
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      # 设置 JDK 版本
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '17'  # Jetpack Compose 通常推荐使用 JDK 17 或更高
+
+      # 缓存 Gradle 依赖项
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # 配置 Android 环境
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          api-level: 33  # 设置 API 级别，可根据需求调整
+          build-tools: 33.0.0
+          cmake: 3.18.1 # 如果需要 CMake，请添加此行
+
+      # 编译项目
+      - name: Build with Gradle
+        run: ./gradlew assembleRelease
+
+      # 保存生成的 APK 作为构建产物
+      - name: Upload APK
+        uses: actions/upload-artifact@v2
+        with:
+          name: app-release.apk
+          path: app/build/outputs/apk/release/app-release.apk
