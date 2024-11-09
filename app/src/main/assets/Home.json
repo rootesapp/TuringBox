@@ -1,0 +1,57 @@
+{
+  "commands": [
+    {
+      "title": "新增桌面快捷方式",
+      "description": "点击桌面快捷方式即可执行自定义设置的shell命令",
+      "params": [
+        {"name": "confirm", "label": "是否需要二次确定？", "type": "checkbox"},
+        {"name": "auto_exit", "label": "是否执行完成后自动关闭日志界面？", "type": "checkbox"},
+        {"name": "close_page", "label": "是否需要关闭界面？", "type": "checkbox"},
+        {"name": "interruptible", "label": "执行时右下角是否一直显示退出按钮？", "type": "checkbox", "value": true},
+        {"name": "log", "label": "执行方式", "type": "Spinner", "options": ["null|默认", "hide|静默执行", "toast|使用Toast显示日志"]},
+        {"name": "icon", "label": "自定义桌面快捷方式图标", "type": "file"},
+        {"name": "title", "label": "桌面名称", "type": "EditText", "required": true},
+        {"name": "desc", "label": "添加备注描述", "type": "EditText", "hint": "可为空"},
+        {"name": "ml", "label": "点击桌面图标要执行的shell命令", "type": "EditText", "required": true}
+      ],
+      "shell": ". ./shortcut.sh"
+    },
+    {
+      "title": "快捷方式生成结果",
+      "description": "生成的快捷方式结果",
+      "shell": "rm -f $PAGE/Shortcut.json",
+      "meta": {"hide-sh": "[[ -f $PAGE/Shortcut.json ]] && echo false || echo true"},
+      "menu": [
+        {"type": "exit", "title": "关闭页面"},
+        {"type": "default", "autoExit": true, "title": "清空本页所有结果", "interruptible": true}
+      ]
+    },
+    {
+      "title": "查看本机ip信息",
+      "shell": ". ./view_ip_info.sh",
+      "meta": {"confirm": true}
+    },
+    {
+      "title": "文件加解密",
+      "description": "支持任意文件，采用自研的混淆算法加2层密码对任意文件的二进制数据进行混淆加密",
+      "shell": ". ./fileencryptionanddecryption.sh",
+      "params": [
+        {"type": "text", "value": "个人推荐加密时俩个密码留空，采用默认的随机密码"},
+        {"name": "password1", "label": "输入密码1", "type": "EditText", "maxLength": 19},
+        {"name": "password2", "label": "输入密码2", "type": "EditText", "maxLength": 19},
+        {"type": "Spinner", "name": "Option", "options": ["|①　加密", "-d|②　解密"]},
+        {"name": "File", "type": "file", "label": "选择文件"}
+      ]
+    },
+    {
+      "title": "查看/校验文件哈希值",
+      "description": "支持算法：MD5、SHA1、SHA224、SHA256、SHA384、SHA3、SHA512、CRC32",
+      "shell": ". ./check_hash.sh",
+      "params": [
+        {"type": "Selector", "name": "Hash", "title": "哈希值", "multi": true, "options": ["MD5", "SHA1", "SHA256"]},
+        {"name": "value", "title": "可输入哈希值同时进行校验"},
+        {"name": "File", "type": "file", "required": true, "label": "选择文件"}
+      ]
+    }
+  ]
+}
