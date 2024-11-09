@@ -19,9 +19,9 @@ android {
     signingConfigs {
         create("turing-box-signing") {
             storeFile = file("turing-key.jks")
-            storePassword "qwq9870" // Ensure correct indentation here
-            keyAlias "rootes"       // Ensure correct indentation here
-            keyPassword "qwq9870"
+            storePassword = "qwq9870" // Ensure correct indentation here
+            keyAlias = "rootes"       // Ensure correct indentation here
+            keyPassword = "qwq9870"
             this.enableV1Signing = true
             this.enableV2Signing = true
             this.enableV3Signing = true
