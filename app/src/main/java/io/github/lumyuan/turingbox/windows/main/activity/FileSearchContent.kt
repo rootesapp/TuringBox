@@ -1,123 +1,233 @@
-package io.github.lumyuan.turingbox.windows.main.activity
-
-import android.content.Context
+import android.Manifest
+import android.content.Intent
+import android.os.Build
 import android.os.Environment
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import android.provider.Settings
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.compose.ui.window.Popup
 import java.io.File
+import kotlinx.coroutines.*
+
+class FileSearchContent : ComponentActivity() {
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (!isGranted) {
+            // 未授权时，跳转到设置页面
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                startActivity(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION))
+            }
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // 请求文件管理权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            requestPermissionLauncher.launch(Manifest.permission.MANAGE_EXTERNAL_STORAGE)
+        }
+        
+        setContent {
+            FileSearchApp()
+        }
+    }
+}
 
 @Composable
-fun FileSearchContent(
-    files: List<String>,
-    isLoading: Boolean,
-    isPermissionDenied: Boolean,
-    onRequestPermission: () -> Unit
-) {
-    if (isPermissionDenied) {
-        NoPermissionContent(onRequestPermission)
-    } else {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            AnimatedVisibility(
-                visible = isLoading,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Popup(alignment = Alignment.Center) {
-                    LoadingPopup()
-                }
-            }
+fun FileSearchApp() {
+    var isLoading by remember { mutableStateOf(false) }
+    var fileStats by remember { mutableStateOf<FileStats?>(null) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showNoPermissionDialog by remember { mutableStateOf(false) }
 
-            if (!isLoading && files.isEmpty()) {
-                Text(text = "没有找到文件", textAlign = TextAlign.Center)
-            } else {
-                FileList(files)
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (Environment.isExternalStorageManager()) {
+            Button(onClick = {
+                isLoading = true
+                fileStats = null
+                CoroutineScope(Dispatchers.IO).launch {
+                    fileStats = searchFiles(File(Environment.getExternalStorageDirectory().toString()))
+                    isLoading = false
+                }
+            }) {
+                Text("搜索文件")
             }
+        } else {
+            showNoPermissionDialog = true
+        }
+
+        if (isLoading) {
+            LoadingPopup()
+        }
+
+        fileStats?.let {
+            Text("音乐文件: ${it.musicCount}")
+            Text("视频文件: ${it.videoCount}")
+            Text("文档文件: ${it.documentCount}")
+            Text("空文件: ${it.emptyFileCount}")
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { showDeleteDialog = true }) {
+                Text("删除所有空文件和目录")
+            }
+        }
+
+        if (showDeleteDialog) {
+            ConfirmDeletePopup(
+                onDeleteConfirmed = {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        fileStats?.let { stats ->
+                            deleteFiles(stats.emptyFiles)
+                            deleteDirectories(stats.emptyDirs)
+                        }
+                        fileStats = null
+                        showDeleteDialog = false
+                    }
+                },
+                onDismiss = { showDeleteDialog = false }
+            )
+        }
+
+        if (showNoPermissionDialog) {
+            NoPermissionPopup { showNoPermissionDialog = false }
         }
     }
 }
 
 @Composable
 fun LoadingPopup() {
-    Surface(
-        modifier = Modifier
-            .padding(16.dp)
-            .size(200.dp),
-        shape = MaterialTheme.shapes.medium,
-        elevation = 8.dp
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+    Popup(alignment = Alignment.Center) {
+        AnimatedVisibility(
+            visible = true,
+            enter = fadeIn() + scaleIn(initialScale = 0.9f),
+            exit = fadeOut() + scaleOut(targetScale = 0.9f)
         ) {
-            CircularProgressIndicator()
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "正在加载...", textAlign = TextAlign.Center)
-        }
-    }
-}
-
-@Composable
-fun NoPermissionContent(onRequestPermission: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = "没有文件访问权限")
-        Spacer(modifier = Modifier.height(8.dp))
-        Button(onClick = onRequestPermission) {
-            Text("请求权限")
-        }
-    }
-}
-
-@Composable
-fun FileList(files: List<String>) {
-    Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        files.forEach { file ->
-            Text(text = file)
-        }
-    }
-}
-
-suspend fun searchFiles(context: Context): List<String> = withContext(Dispatchers.IO) {
-    val musicExtensions = listOf(".mp3", ".wav", ".m4a")
-    val videoExtensions = listOf(".mp4", ".avi", ".mkv")
-    val docExtensions = listOf(".pdf", ".doc", ".docx", ".txt")
-
-    val filesList = mutableListOf<String>()
-    val root = Environment.getExternalStorageDirectory()
-
-    fun search(directory: File) {
-        directory.listFiles()?.forEach { file ->
-            when {
-                file.isDirectory -> search(file)
-                file.extension in musicExtensions -> filesList.add("音乐文件: ${file.name}")
-                file.extension in videoExtensions -> filesList.add("视频文件: ${file.name}")
-                file.extension in docExtensions -> filesList.add("文档文件: ${file.name}")
-                file.length() == 0L -> filesList.add("空文件: ${file.name}")
+            Box(
+                modifier = Modifier
+                    .size(180.dp)
+                    .background(Color.White, shape = RoundedCornerShape(16.dp))
+                    .padding(16.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = "加载中...", style = MaterialTheme.typography.subtitle1)
+                }
             }
         }
     }
+}
 
-    search(root)
-    return@withContext filesList
+@Composable
+fun ConfirmDeletePopup(onDeleteConfirmed: () -> Unit, onDismiss: () -> Unit) {
+    Popup(alignment = Alignment.Center) {
+        AnimatedVisibility(
+            visible = true,
+            enter = fadeIn() + slideInVertically(),
+            exit = fadeOut() + slideOutVertically()
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(260.dp)
+                    .background(Color.White, shape = RoundedCornerShape(16.dp))
+                    .padding(16.dp)
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "确认删除", style = MaterialTheme.typography.h6)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("是否删除所有空文件和空目录？")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Button(onClick = onDismiss) {
+                            Text("取消")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(onClick = onDeleteConfirmed, colors = ButtonDefaults.buttonColors(backgroundColor = Color.Red)) {
+                            Text("删除", color = Color.White)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun NoPermissionPopup(onDismiss: () -> Unit) {
+    Popup(alignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .size(300.dp)
+                .background(Color.White, shape = RoundedCornerShape(16.dp))
+                .padding(16.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("没有权限")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("请在设置中授予文件访问权限")
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onDismiss) {
+                    Text("确定")
+                }
+            }
+        }
+    }
+}
+
+// 文件搜索和删除逻辑
+data class FileStats(
+    val musicCount: Int,
+    val videoCount: Int,
+    val documentCount: Int,
+    val emptyFileCount: Int,
+    val emptyFiles: List<File>,
+    val emptyDirs: List<File>
+)
+
+suspend fun searchFiles(root: File): FileStats {
+    val musicExts = listOf("mp3", "wav", "aac")
+    val videoExts = listOf("mp4", "mkv", "avi")
+    val docExts = listOf("txt", "pdf", "docx")
+    var musicCount = 0
+    var videoCount = 0
+    var documentCount = 0
+    val emptyFiles = mutableListOf<File>()
+    val emptyDirs = mutableListOf<File>()
+
+    root.walk().forEach { file ->
+        if (file.isFile) {
+            when (file.extension.lowercase()) {
+                in musicExts -> musicCount++
+                in videoExts -> videoCount++
+                in docExts -> documentCount++
+            }
+            if (file.length() == 0L) emptyFiles.add(file)
+        } else if (file.isDirectory && file.listFiles()?.isEmpty() == true) {
+            emptyDirs.add(file)
+        }
+    }
+
+    return FileStats(musicCount, videoCount, documentCount, emptyFiles.size, emptyFiles, emptyDirs)
+}
+
+fun deleteFiles(files: List<File>) {
+    files.forEach { it.delete() }
+}
+
+fun deleteDirectories(directories: List<File>) {
+    directories.forEach { it.deleteRecursively() }
 }
