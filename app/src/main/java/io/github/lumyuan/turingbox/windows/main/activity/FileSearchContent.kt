@@ -23,7 +23,7 @@ import androidx.compose.ui.window.Popup
 import java.io.File
 import kotlinx.coroutines.*
 
-//@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class)
 class FileSearchContent : ComponentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
