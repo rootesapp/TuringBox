@@ -48,7 +48,7 @@ android {
     buildTypes {
         release {
             isShrinkResources = true
-            isMinifyEnabled = trust
+            isMinifyEnabled = ture
             isDebuggable = false
             isJniDebuggable = false
             proguardFiles(
