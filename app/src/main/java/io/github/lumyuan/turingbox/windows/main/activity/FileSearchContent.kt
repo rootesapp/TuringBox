@@ -1,3 +1,6 @@
+package io.github.lumyuan.turingbox.windows.main.activity
+
+import android.os.Bundle 
 import android.Manifest
 import android.content.Intent
 import android.os.Build
@@ -20,6 +23,7 @@ import androidx.compose.ui.window.Popup
 import java.io.File
 import kotlinx.coroutines.*
 
+//@OptIn(ExperimentalAnimationApi::class)
 class FileSearchContent : ComponentActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
