@@ -33,4 +33,17 @@
 #-keepclassmembers public class com.android.vending.licensing.ILicensingService
 #-keepclassmembers class android.support.** {*;}
 
+# Keep BouncyCastle classes
+-keep class org.bouncycastle.** { *; }
+
+# Keep Conscrypt classes
+-keep class org.conscrypt.** { *; }
+
+# Keep OpenJSSE classes
+-keep class org.openjsse.** { *; }
+
+# Keep OkHttp platform classes
+-keep class okhttp3.internal.platform.** { *; }
+
+
 -keep class io.github.lumyuan.turingbox.common.model.**{*;}
