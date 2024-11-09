@@ -1,130 +1,67 @@
 package io.github.lumyuan.turingbox.windows.main
 
-import android.content.Context
-import android.graphics.Color
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color as ComposeColor
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
-import com.google.gson.Gson
-import java.io.InputStreamReader
+import androidx.compose.ui.unit.dp
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 
-// 数据模型
-data class AllInOne(
-    val title: String,
-    val desc: String,
-    val summary: String,
-    val color: String
-)
-
-data class Switch(
-    val title: String,
-    val desc: String
-)
-
-data class Text(
-    val title: String
-)
-
-data class Home(
-    val AllInOne: AllInOne,
-    val Switch: Switch,
-    val Text: Text
-)
-
-// 从assets读取并解析JSON数据
-fun loadJsonFromAssets(context: Context, fileName: String): Home? {
-    return try {
-        val inputStream = context.assets.open(fileName)
-        val json = InputStreamReader(inputStream).use { it.readText() }
-        val gson = Gson()
-        gson.fromJson(json, Home::class.java)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-// MinePage Composable
 @Composable
-fun MinePage(context: Context) {
-    val homeData = loadJsonFromAssets(context, "Home.json")
+fun MinePage() {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Button(onClick = { 
+            Toast.makeText(LocalContext.current, "你点了 OTG功能", Toast.LENGTH_SHORT).show()
+        }) {
+            Text(text = "OTG功能")
+        }
 
-    homeData?.let {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // AllInOne部分
-            AllInOneSection(it.AllInOne)
+        Spacer(modifier = Modifier.height(8.dp))
 
-            // Switch部分
-            SwitchSection(it.Switch)
+        Button(onClick = { 
+            Toast.makeText(LocalContext.current, "你点了 Magisk功能", Toast.LENGTH_SHORT).show()
+        }) {
+            Text(text = "Magisk功能")
+        }
 
-            // Text部分
-            TextSection(it.Text)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = { 
+            Toast.makeText(LocalContext.current, "你点了 Lsposed/Xpoesd", Toast.LENGTH_SHORT).show()
+        }) {
+            Text(text = "Lsposed/Xpoesd")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = { 
+            Toast.makeText(LocalContext.current, "你点了 系统功能", Toast.LENGTH_SHORT).show()
+        }) {
+            Text(text = "系统功能")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = { 
+            Toast.makeText(LocalContext.current, "你点了 界面功能", Toast.LENGTH_SHORT).show()
+        }) {
+            Text(text = "界面功能")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(onClick = { 
+            Toast.makeText(LocalContext.current, "你点了 文件功能", Toast.LENGTH_SHORT).show()
+        }) {
+            Text(text = "文件功能")
         }
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun AllInOneSection(allInOne: AllInOne) {
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(
-            text = allInOne.title,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = ComposeColor(android.graphics.Color.parseColor(allInOne.color))
-        )
-        Text(
-            text = allInOne.desc,
-            fontSize = 16.sp,
-            color = ComposeColor.Black
-        )
-        Text(
-            text = allInOne.summary,
-            fontSize = 18.sp,
-            fontStyle = FontStyle.Italic,
-            color = ComposeColor(android.graphics.Color.parseColor(allInOne.color))
-        )
-    }
-}
-
-@Composable
-fun SwitchSection(switch: Switch) {
-    var isChecked by remember { mutableStateOf(false) }
-
-    Column(modifier = Modifier.padding(vertical = 8.dp)) {
-        Text(
-            text = switch.title,
-            fontSize = 16.sp,
-            color = ComposeColor.Black
-        )
-        Text(
-            text = switch.desc,
-            fontSize = 14.sp,
-            color = ComposeColor.Gray
-        )
-
-        // Switch 控件
-        Switch(
-            checked = isChecked,
-            onCheckedChange = { isChecked = it },
-            colors = SwitchDefaults.colors(checkedThumbColor = ComposeColor(0xFF9C27B0))
-        )
-    }
-}
-
-@Composable
-fun TextSection(text: Text) {
-    Text(
-        text = text.title,
-        fontSize = 18.sp,
-        fontWeight = FontWeight.Bold,
-        color = ComposeColor.Black
-    )
+fun DefaultPreview() {
+    MinePage()
 }
