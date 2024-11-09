@@ -131,6 +131,13 @@ dependencies {
     // OkHttp dependencies
     implementation("com.squareup.okhttp3:okhttp:4.10.0") // OkHttp version (use the latest)
 
+
+implementation("androidx.compose.ui:ui:1.4.0") // 或者你项目当前使用的版本
+    implementation("androidx.compose.material:material:1.4.0") // 或者你项目当前使用的版本
+    implementation("androidx.compose.foundation:foundation:1.4.0") // 或者你项目当前使用的版本
+    implementation("androidx.compose.runtime:runtime:1.4.0") // 或者你项目当前使用的版本
+
+  
     // Compose UI Testing and Preview
     implementation(libs.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
