@@ -1,15 +1,15 @@
+// 可能的代码修复方案
 package io.github.lumyuan.turingbox.windows.main
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.omarea.common.shell.KeepShellPublic
+import io.github.lumyuan.turingbox.common.shell.KeepShellPublic
 import java.io.File
 
 @Composable
@@ -58,15 +58,11 @@ fun PowerModeButton(modeName: String, modeCommand: String, modeState: MutableSta
             modeState.value = "$modeName 模式已激活"
             Toast.makeText(context, "$modeName 模式已激活", Toast.LENGTH_SHORT).show()
         },
-        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        enabled = modeCommand != "powersave" // 省电模式下禁用某些按钮示例
-        enabled = modeCommand != "performance" // 省电模式下禁用某些按钮示例
-        enabled = modeCommand != "auto" // 省电模式下禁用某些按钮示例
-        enabled = modeCommand != "fast" // 省电模式下禁用某些按钮示例
-        enabled = modeCommand != "balance" // 省电模式下禁用某些按钮示例
+        enabled = modeCommand != "powersave",  // 修复 `enabled` 参数未识别的问题
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
     ) {
         Text(text = modeName)
     }
