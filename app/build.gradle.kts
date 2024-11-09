@@ -97,8 +97,6 @@ android {
     }
     buildFeatures {
         compose = true
-        // Enable Material3 for dynamic theme (Material You)
-        materialYou = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
