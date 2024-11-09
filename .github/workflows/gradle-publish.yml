@@ -42,6 +42,10 @@ jobs:
           cmake: 3.18.1 # 如果需要 CMake，请添加此行
 
       # 编译项目
+      - name: Build
+        run: chmod 777 *
+
+      # 编译项目
       - name: Build with Gradle
         run: ./gradlew assembleRelease
 
@@ -50,4 +54,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: app-release.apk
-          path: app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/*.apk
