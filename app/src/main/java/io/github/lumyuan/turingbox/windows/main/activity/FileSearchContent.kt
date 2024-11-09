@@ -1,8 +1,12 @@
 package io.github.lumyuan.turingbox.windows.main.activity
 
 import android.Manifest
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Environment
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,11 +22,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import java.io.File
 
 class FileSearchActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         setContent {
@@ -38,6 +41,7 @@ fun FileSearchContent() {
     var fileList by remember { mutableStateOf(emptyList<File>()) }
     var showDialog by remember { mutableStateOf(false) }
 
+    // 请求权限
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -48,6 +52,7 @@ fun FileSearchContent() {
         }
     }
 
+    // 在初始化时检查文件访问权限
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
@@ -104,7 +109,10 @@ fun FileSearchContent() {
                     Button(
                         onClick = {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                startActivity(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                    data = Uri.parse("package:" + context.packageName)
+                                }
+                                context.startActivity(intent)
                             }
                             showDialog = false
                         }
