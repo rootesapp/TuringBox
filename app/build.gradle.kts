@@ -134,6 +134,9 @@ dependencies {
     // OkHttp dependencies
     implementation("com.squareup.okhttp3:okhttp:4.10.0") // OkHttp version (use the latest)
 
+implementation("org.bouncycastle:bcprov-jdk15on:1.70") // Conscrypt 
+implementation("org.conscrypt:conscrypt-android:2.5.0") // OpenJSSE 
+implementation("org.openjsse:openjsse:1.0.0") 
 
 implementation("androidx.compose.ui:ui:1.4.0") // 或者你项目当前使用的版本
     implementation("androidx.compose.material:material:1.4.0") // 或者你项目当前使用的版本
