@@ -136,7 +136,7 @@ dependencies {
 
 implementation("org.bouncycastle:bcprov-jdk15on:1.70") // Conscrypt 
 implementation("org.conscrypt:conscrypt-android:2.5.0") // OpenJSSE 
-implementation("org.openjsse:openjsse:2.0.0") 
+implementation("org.openjsse:openjsse:1.1.13") 
 
 implementation("androidx.compose.ui:ui:1.4.0") // 或者你项目当前使用的版本
     implementation("androidx.compose.material:material:1.4.0") // 或者你项目当前使用的版本
