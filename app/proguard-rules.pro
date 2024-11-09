@@ -32,36 +32,6 @@
 #-keepclassmembers public class * extends android.view.View
 #-keepclassmembers public class com.android.vending.licensing.ILicensingService
 #-keepclassmembers class android.support.** {*;}
-
-# Keep classes related to Conscrypt
--keep class org.conscrypt.** { *; }
-
-# Keep classes related to BouncyCastle
--keep class org.bouncycastle.** { *; }
-
-# Keep classes related to OpenJSSE
--keep class org.openjsse.** { *; }
-
-# Keep classes related to SSLParameters and SSLSocket
--keep class javax.naming.** { *; }
--keep class javax.net.ssl.** { *; }
--keep class org.apache.harmony.xnet.provider.jsse.** { *; }
--keep class org.bouncycastle.jsse.** { *; }
-
-
-# Keep classes related to Conscrypt
--keep class org.conscrypt.** { *; }
-
-# Keep classes related to BouncyCastle
--keep class org.bouncycastle.** { *; }
-
-# Keep classes related to OpenJSSE
--keep class org.openjsse.** { *; }
-
-# Keep classes related to SSLParameters and SSLSocket
--keep class javax.naming.** { *; }
--keep class javax.net.ssl.** { *; }
--keep class org.apache.harmony.xnet.provider.jsse.** { *; }
--keep class org.bouncycastle.jsse.** { *; }
+-dontwarn org.slf4j.impl.StaticLoggerBinder
 
 -keep class io.github.lumyuan.turingbox.common.model.**{*;}
