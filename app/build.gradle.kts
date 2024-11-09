@@ -18,10 +18,10 @@ android {
 
     signingConfigs {
         create("turing-box-signing") {
-            storeFile = file("../turing-key.jks")
-            storePassword = "0409.kaly"
-            keyAlias = "lumyuan"
-            keyPassword = "0409.kaly"
+            storeFile = file("./turing-key.jks")
+            storePassword 'qwq9870'
+            keyAlias 'rootes'
+            keyPassword 'qwq9870'
             this.enableV1Signing = true
             this.enableV2Signing = true
             this.enableV3Signing = true
