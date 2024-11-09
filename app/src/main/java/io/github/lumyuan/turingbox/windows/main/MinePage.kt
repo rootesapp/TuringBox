@@ -1,10 +1,7 @@
 package io.github.lumyuan.turingbox.windows.main
 
-import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,7 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import io.github.lumyuan.turingbox.common.shell.KeepShellPublic // 确认导入路径是否正确
+import io.github.lumyuan.turingbox.common.shell.KeepShellPublic
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -24,12 +21,15 @@ import java.io.InputStream
 fun MinePage() {
     val context = LocalContext.current
     val privateScriptPath = File(context.filesDir, "powercfg.sh") // 软件私有目录中的脚本路径
-    val scriptExists = remember { privateScriptPath.exists() }
+    var scriptExists by remember { mutableStateOf(privateScriptPath.exists()) }
     val modeState = remember { mutableStateOf("调度已激活") }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             copyScriptToPrivateDir(context, it, privateScriptPath)
+            // 在文件导入后，修改权限为 777
+            KeepShellPublic.doCmdSync("chmod 777 ${privateScriptPath.absolutePath}")
+            scriptExists = privateScriptPath.exists() // 刷新界面状态
         }
     }
 
