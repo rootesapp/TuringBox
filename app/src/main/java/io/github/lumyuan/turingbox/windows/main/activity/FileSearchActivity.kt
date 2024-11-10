@@ -1,233 +1,202 @@
 package io.github.lumyuan.turingbox.windows.main.activity
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.MaterialTheme
-import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import java.io.File
 
 class FileSearchActivity : ComponentActivity() {
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                Toast.makeText(this, "权限已授予", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "权限被拒绝", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val requestManageExternalStorageLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                Toast.makeText(this, "管理存储权限已授予", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "管理存储权限被拒绝", Toast.LENGTH_SHORT).show()
+            }
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            FileSearchContent()
+
+        // 动态申请权限
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13及以上版本
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_MEDIA_IMAGES
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                // 权限已授予，初始化UI
+                setContent {
+                    FileSearchView()
+                }
+            } else {
+                // 请求媒体文件权限
+                requestPermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // Android 10 到 Android 12（API 29 到 API 32）
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                // 权限已授予，初始化UI
+                setContent {
+                    FileSearchView()
+                }
+            } else {
+                // 请求读取存储权限
+                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+        } else {
+            // 对于 Android 9（API 28）及以下，直接初始化UI
+            setContent {
+                FileSearchView()
+            }
         }
     }
 }
 
 @Composable
-fun FileSearchContent() {
-    val context = LocalContext.current
-    var fileList by remember { mutableStateOf(emptyList<File>()) }
-    var fileCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
-    var showDialog by remember { mutableStateOf(false) }
-    var showPermissionDialog by remember { mutableStateOf(false) }
-    var fileToDelete by remember { mutableStateOf<File?>(null) }
-    var showLoadingDialog by remember { mutableStateOf(false) }
+fun FileSearchView() {
+    var category by remember { mutableStateOf("所有文件") }
+    var files by remember { mutableStateOf(getFiles()) }
+    var searchQuery by remember { mutableStateOf("") }
 
-    // 动态请求多个权限
-    val requestMultiplePermissionsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        if (permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true &&
-            permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] == true &&
-            permissions[Manifest.permission.CAMERA] == true &&
-            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
-            Toast.makeText(context, "所有权限已授予", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "部分权限未授予", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // 初始化时检查文件访问权限
-    LaunchedEffect(Unit) {
-        // 动态请求多个权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13及以上版本
-            requestMultiplePermissionsLauncher.launch(
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Android 11 和 Android 12
-            if (!Environment.isExternalStorageManager()) {
-                showPermissionDialog = true
-            }
-        } else {
-            // Android 10及以下版本
-            requestMultiplePermissionsLauncher.launch(
-                arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    Manifest.permission.CAMERA
-                )
-            )
-        }
-    }
-
-    // 显示权限请求对话框
-    if (showPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { /* 关闭对话框时的操作 */ },
-            title = { Text("权限请求") },
-            text = { Text("应用需要访问您的存储和相机权限，请允许权限以继续") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        // 启动权限请求
-                        requestMultiplePermissionsLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.READ_EXTERNAL_STORAGE,
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                Manifest.permission.CAMERA
-                            )
-                        )
-                        showPermissionDialog = false
-                    }
-                ) {
-                    Text("允许")
-                }
-            },
-            dismissButton = {
-                Button(
-                    onClick = { showPermissionDialog = false }
-                ) {
-                    Text("取消")
-                }
-            }
-        )
-    }
-
-    // 搜索文件的逻辑
-    fun searchFiles(type: String): List<File> {
-        val directory = Environment.getExternalStorageDirectory()
-        return directory.walkTopDown().filter { file ->
-            // 添加文件类型过滤逻辑
-            true // 搜索所有文件
-        }.toList()
-    }
-
-    // 计算文件数量
-    fun countFiles(): Map<String, Int> {
-        val categories = listOf("音乐", "视频", "安装包", "文档", "QQ文件", "微信文件", "空目录", "空文件")
-        return categories.associateWith { category -> searchFiles(category).size }
-    }
-
-    // 搜索并展示文件
-    fun searchAndShowFiles(type: String) {
-        showLoadingDialog = true
-        fileList = searchFiles(type)
-        showLoadingDialog = false
-    }
-
-    // 文件删除操作
-    fun deleteFile(file: File) {
-        file.delete()
-        Toast.makeText(context, "${file.name} 已删除", Toast.LENGTH_SHORT).show()
-    }
-
-    // UI部分
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.LightGray) // 设置背景颜色为灰色
-    ) {
-        // 顶部 App Bar
+    Column(modifier = Modifier.padding(16.dp)) {
+        // TopAppBar with a Back button
         TopAppBar(
             title = { Text("文件搜索") },
             navigationIcon = {
-                IconButton(onClick = { /* 返回功能*/ }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
+                IconButton(onClick = { /* Handle back navigation */ }) {
+                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "返回")
                 }
             },
-            backgroundColor = Color.Blue,
-            contentColor = Color.White
+            modifier = Modifier.fillMaxWidth()
         )
 
-        // 文件分类按钮
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            val categories = listOf("音乐", "视频", "安装包", "文档", "QQ文件", "微信文件", "空目录", "空文件")
-            items(categories.size) { index ->
-                val category = categories[index]
-                val count = fileCounts[category] ?: 0
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = category, modifier = Modifier.weight(1f))
-                    Text(text = "$count 文件", modifier = Modifier.align(Alignment.CenterVertically))
-                    IconButton(onClick = { searchAndShowFiles(category) }) {
-                        Icon(Icons.Default.Search, contentDescription = "搜索")
-                    }
-                }
+        // 搜索框
+        BasicTextField(
+            value = searchQuery,
+            onValueChange = {
+                searchQuery = it
+                files = getFiles(category).filter { file -> file.name.contains(searchQuery, true) }
+            },
+            keyboardOptions = KeyboardOptions.Default.copy(autoCorrect = false),
+            keyboardActions = KeyboardActions.Default,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+        )
+
+        // 文件类别选择
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = { category = "音乐"; files = getFiles(category) }) {
+                Text("音乐")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { category = "视频"; files = getFiles(category) }) {
+                Text("视频")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { category = "文档"; files = getFiles(category) }) {
+                Text("文档")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { category = "安装包"; files = getFiles(category) }) {
+                Text("安装包")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = { category = "空目录"; files = getFiles(category) }) {
+                Text("空目录")
             }
         }
 
-        Divider() // 分割线
-
-        // 正在加载对话框
-        if (showLoadingDialog) {
-            AlertDialog(
-                onDismissRequest = { },
-                title = { Text("正在加载") },
-                text = { Text("文件正在加载，请稍候...") },
-                confirmButton = {
-                    Button(onClick = { }) {
-                        Text("关闭")
-                    }
-                }
-            )
+        // 文件列表
+        LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+            items(files) { file ->
+                FileItem(file = file)
+            }
         }
+    }
+}
 
-        // 文件删除确认对话框
-        if (showDialog && fileToDelete != null) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("确认删除文件") },
-                text = { Text("确定要删除 ${fileToDelete!!.name} 吗？") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            fileToDelete?.let { deleteFile(it) }
-                            showDialog = false
-                            fileToDelete = null
-                        }
-                    ) {
-                        Text("删除")
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showDialog = false }) {
-                        Text("取消")
-                    }
-                }
-            )
+@Composable
+fun FileItem(file: File) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(8.dp)
+    ) {
+        Text(file.name, modifier = Modifier.weight(1f))
+
+        // 操作按钮
+        Row {
+            IconButton(onClick = { openFile(file) }) {
+                Icon(imageVector = Icons.Default.OpenInBrowser, contentDescription = "打开")
+            }
+            IconButton(onClick = { deleteFile(file) }) {
+                Icon(imageVector = Icons.Default.Delete, contentDescription = "删除")
+            }
         }
+    }
+}
+
+// 获取文件列表并按类别分类
+fun getFiles(category: String = "所有文件"): List<File> {
+    val dir = File(Environment.getExternalStorageDirectory().path)
+    val files = dir.listFiles() ?: arrayOf()
+
+    return when (category) {
+        "音乐" -> files.filter { it.extension in listOf("mp3", "wav", "flac") }
+        "视频" -> files.filter { it.extension in listOf("mp4", "avi", "mkv", "mov") }
+        "文档" -> files.filter { it.extension in listOf("pdf", "doc", "docx", "ppt") }
+        "安装包" -> files.filter { it.extension == "apk" }
+        "空目录" -> files.filter { it.isDirectory && it.list().isEmpty() }
+        else -> files.toList()
+    }
+}
+
+// 打开文件
+fun openFile(file: File) {
+    val uri = Uri.fromFile(file)
+    val intent = Intent(Intent.ACTION_VIEW, uri)
+    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+    context.startActivity(intent)
+}
+
+// 删除文件
+fun deleteFile(file: File): Boolean {
+    return if (file.exists()) {
+        file.delete()
+    } else {
+        false
     }
 }
