@@ -1,5 +1,10 @@
 package io.github.lumyuan.turingbox.windows.main.activity
 
+import io.github.lumyuan.turingbox.R
+import io.github.lumyuan.turingbox.windows.main.theme.TuringBoxTheme
+import io.github.lumyuan.turingbox.windows.main.theme.AppTheme
+import io.github.lumyuan.turingbox.windows.main.theme.appTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
