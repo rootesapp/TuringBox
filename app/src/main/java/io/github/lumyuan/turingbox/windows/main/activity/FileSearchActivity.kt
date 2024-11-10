@@ -8,9 +8,9 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -87,7 +87,7 @@ fun FileSearchContent() {
 
     // 搜索文件
     fun searchFiles(type: String): List<File> {
-        val directory = Environment.getExternalStorageDirectory()
+        val directory = File(Environment.getExternalStorageDirectory().toURI())
         return directory.walkTopDown().filter { file ->
             when (type) {
                 "音乐" -> file.extension in listOf("mp3", "wav", "flac")
