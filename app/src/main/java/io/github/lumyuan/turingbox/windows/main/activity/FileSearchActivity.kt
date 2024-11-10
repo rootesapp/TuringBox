@@ -30,7 +30,7 @@ import androidx.compose.foundation.layout.Column
 import java.io.File
 import android.os.Environment
 import androidx.compose.foundation.lazy.items
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
 
 class FileSearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
