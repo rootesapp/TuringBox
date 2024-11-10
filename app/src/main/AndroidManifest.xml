@@ -65,7 +65,7 @@
             android:theme="@style/Theme.TuringBox"/>
 
         <activity
-            android:name=".windows.main.activity.FileSearchContent"
+            android:name=".windows.main.activity.FileSearchActivity"
             android:exported="false"
             android:theme="@style/Theme.TuringBox">
             <intent-filter>
