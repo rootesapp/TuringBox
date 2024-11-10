@@ -75,6 +75,8 @@ fun FileSearchView() {
     var files by remember { mutableStateOf(getFiles()) }
     var searchQuery by remember { mutableStateOf("") }
 
+    val context = LocalContext.current
+
     Column(modifier = Modifier.padding(16.dp)) {
         // TopAppBar with a Back button
         TopAppBar(
