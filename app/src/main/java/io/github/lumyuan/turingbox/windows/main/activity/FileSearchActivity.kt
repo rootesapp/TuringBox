@@ -1,10 +1,9 @@
-package io.github.lumyuan.turingbox.windows.main.activity
+package io.github.lumyuan.turingbox.windows.main
 
 import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.widget.Toast
@@ -21,7 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import java.io.File
 
@@ -48,41 +53,18 @@ class FileSearchActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // 动态申请权限
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13及以上版本
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_MEDIA_IMAGES
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                // 权限已授予，初始化UI
-                setContent {
-                    FileSearchView()
-                }
-            } else {
-                // 请求媒体文件权限
-                requestPermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Android 10 到 Android 12（API 29 到 API 32）
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                // 权限已授予，初始化UI
-                setContent {
-                    FileSearchView()
-                }
-            } else {
-                // 请求读取存储权限
-                requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-        } else {
-            // 对于 Android 9（API 28）及以下，直接初始化UI
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            // 权限已授予，初始化UI
             setContent {
                 FileSearchView()
             }
+        } else {
+            // 请求读取存储权限
+            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
 }
@@ -99,7 +81,7 @@ fun FileSearchView() {
             title = { Text("文件搜索") },
             navigationIcon = {
                 IconButton(onClick = { /* Handle back navigation */ }) {
-                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "返回")
+                    Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "返回")
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -151,6 +133,8 @@ fun FileSearchView() {
 
 @Composable
 fun FileItem(file: File) {
+    val context = LocalContext.current
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(8.dp)
@@ -159,17 +143,16 @@ fun FileItem(file: File) {
 
         // 操作按钮
         Row {
-            IconButton(onClick = { openFile(file) }) {
-                Icon(imageVector = Icons.Default.OpenInBrowser, contentDescription = "打开")
+            IconButton(onClick = { openFile(context, file) }) {
+                Icon(imageVector = Icons.Filled.OpenInBrowser, contentDescription = "打开")
             }
             IconButton(onClick = { deleteFile(file) }) {
-                Icon(imageVector = Icons.Default.Delete, contentDescription = "删除")
+                Icon(imageVector = Icons.Filled.Delete, contentDescription = "删除")
             }
         }
     }
 }
 
-// 获取文件列表并按类别分类
 fun getFiles(category: String = "所有文件"): List<File> {
     val dir = File(Environment.getExternalStorageDirectory().path)
     val files = dir.listFiles() ?: arrayOf()
@@ -184,19 +167,23 @@ fun getFiles(category: String = "所有文件"): List<File> {
     }
 }
 
-// 打开文件
-fun openFile(file: File) {
-    val uri = Uri.fromFile(file)
-    val intent = Intent(Intent.ACTION_VIEW, uri)
-    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+fun openFile(context: Context, file: File) {
+    val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(Uri.fromFile(file), "application/*")
+    }
     context.startActivity(intent)
 }
 
-// 删除文件
-fun deleteFile(file: File): Boolean {
-    return if (file.exists()) {
-        file.delete()
+fun deleteFile(file: File) {
+    if (file.delete()) {
+        Toast.makeText(context, "删除成功", Toast.LENGTH_SHORT).show()
     } else {
-        false
+        Toast.makeText(context, "删除失败", Toast.LENGTH_SHORT).show()
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DefaultPreview() {
+    FileSearchView()
 }
