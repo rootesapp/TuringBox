@@ -1,7 +1,10 @@
 package io.github.lumyuan.turingbox.windows.main.activity
 
 
-import io.github.lumyuan.turingbox.ui.theme.*
+import io.github.lumyuan.turingbox.ui.theme.compose.*
+import io.github.lumyuan.turingbox.ui.theme.theme.*
+import io.github.lumyuan.turingbox.ui.theme.widget.*
+import io.github.lumyuan.turingbox.ui.theme.icon.*
 import io.github.lumyuan.turingbox.R
 import io.github.lumyuan.turingbox.windows.main.theme.TuringBoxTheme
 import io.github.lumyuan.turingbox.windows.main.theme.AppTheme
