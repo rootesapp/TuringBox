@@ -8,9 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -21,16 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.foundation.layout.Column
-import java.io.File
 import android.os.Environment
-import androidx.compose.foundation.lazy.items
-import androidx.activity.compose.rememberLauncherForActivityResult
+import android.widget.Toast
+import java.io.File
 
 class FileSearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,12 +40,11 @@ class FileSearchActivity : ComponentActivity() {
 @Composable
 fun FileSearchContent() {
     val context = LocalContext.current
-    var fileType by remember { mutableStateOf("所有文件") }
     var fileList by remember { mutableStateOf(emptyList<File>()) }
+    var fileCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var showDialog by remember { mutableStateOf(false) }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var fileToDelete by remember { mutableStateOf<File?>(null) }
-    var fileCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var showLoadingDialog by remember { mutableStateOf(false) }
 
     // 动态请求权限
@@ -79,6 +74,7 @@ fun FileSearchContent() {
     // 初始化时检查文件访问权限
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // Android 13及以上版本
             requestMultiplePermissionsLauncher.launch(
                 arrayOf(
                     Manifest.permission.READ_MEDIA_IMAGES,
@@ -87,19 +83,49 @@ fun FileSearchContent() {
                 )
             )
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11 和 Android 12
             if (!Environment.isExternalStorageManager()) {
                 showPermissionDialog = true
             }
         } else {
+            // Android 10及以下版本
             requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
 
-    // 搜索文件
+    // 显示权限请求对话框
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { /* 关闭对话框时的操作 */ },
+            title = { Text("权限请求") },
+            text = { Text("应用需要访问您的存储权限，请允许权限以继续") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // 启动权限请求
+                        requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        showPermissionDialog = false
+                    }
+                ) {
+                    Text("允许")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showPermissionDialog = false }
+                ) {
+                    Text("取消")
+                }
+            },
+            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+        )
+    }
+
+    // 搜索文件的逻辑
     fun searchFiles(type: String): List<File> {
         val directory = Environment.getExternalStorageDirectory()
         return directory.walkTopDown().filter { file ->
-            // 文件过滤逻辑
+            // 添加文件类型过滤逻辑
             true // 搜索所有文件
         }.toList()
     }
@@ -117,11 +143,17 @@ fun FileSearchContent() {
         showLoadingDialog = false
     }
 
+    // 文件删除操作
+    fun deleteFile(file: File) {
+        file.delete()
+        Toast.makeText(context, "${file.name} 已删除", Toast.LENGTH_SHORT).show()
+    }
+
     // UI部分
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White) // 设置背景颜色为白色
+            .background(Color.LightGray) // 设置背景颜色为灰色
     ) {
         // 顶部 App Bar
         TopAppBar(
@@ -179,8 +211,7 @@ fun FileSearchContent() {
                 confirmButton = {
                     Button(
                         onClick = {
-                            fileToDelete?.delete()
-                            Toast.makeText(context, "${fileToDelete!!.name} 已删除", Toast.LENGTH_SHORT).show()
+                            fileToDelete?.let { deleteFile(it) }
                             showDialog = false
                             fileToDelete = null
                         }
@@ -199,10 +230,17 @@ fun FileSearchContent() {
 }
 
 @Composable
-fun SettingsDialogSectionTitle(text: String) {
-    Text(
-        text = text,
-        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
-        modifier = Modifier.padding(16.dp)
-    )
+fun CustomButton(buttonText: String, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()  // 按钮宽度填满父容器
+            .padding(vertical = 8.dp), // 调整按钮的上下间距
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Text(text = buttonText)
+    }
 }
