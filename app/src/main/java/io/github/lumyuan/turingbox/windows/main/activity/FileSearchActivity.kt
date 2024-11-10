@@ -28,6 +28,8 @@ import android.os.Environment
 import android.widget.Toast
 import java.io.File
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.unit.dp
 
 class FileSearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
