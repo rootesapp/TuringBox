@@ -1,15 +1,6 @@
 package io.github.lumyuan.turingbox.windows.main.activity
 
-
-import io.github.lumyuan.turingbox.ui.theme.compose.*
-import io.github.lumyuan.turingbox.ui.theme.theme.*
-import io.github.lumyuan.turingbox.ui.theme.widget.*
-import io.github.lumyuan.turingbox.ui.theme.icon.*
-import io.github.lumyuan.turingbox.R
-import io.github.lumyuan.turingbox.windows.main.theme.TuringBoxTheme
-import io.github.lumyuan.turingbox.windows.main.theme.AppTheme
-import io.github.lumyuan.turingbox.windows.main.theme.appTheme
-import androidx.compose.foundation.shape.RoundedCornerShape
+import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -36,13 +27,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
-import io.github.lumyuan.turingbox.windows.main.theme.TuringBoxTheme
+import androidx.compose.foundation.layout.Column
+import io.github.lumyuan.turingbox.R
 import io.github.lumyuan.turingbox.windows.main.theme.AppTheme
-import io.github.lumyuan.turingbox.windows.main.theme.getRealName
-import io.github.lumyuan.turingbox.windows.main.theme.appTheme
+import io.github.lumyuan.turingbox.windows.main.theme.Color
+import io.github.lumyuan.turingbox.windows.main.theme.Theme
+import io.github.lumyuan.turingbox.windows.main.theme.AppThemeConfiguration.kt
+
 import java.io.File
 import android.os.Environment
-import android.Manifest
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.text.TextStyle
 
 class FileSearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,12 +64,25 @@ fun FileSearchContent() {
 
     // 动态请求权限
     val requestPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
+        contract = ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
             Toast.makeText(context, "权限已获取", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "未获取权限", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 请求多个权限
+    val requestMultiplePermissionsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.READ_MEDIA_IMAGES] == true &&
+            permissions[Manifest.permission.READ_MEDIA_VIDEO] == true &&
+            permissions[Manifest.permission.READ_MEDIA_AUDIO] == true) {
+            Toast.makeText(context, "所有权限已授予", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "部分权限未授予", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -230,18 +238,13 @@ fun FileSearchContent() {
             )
         }
     }
-
-    // 更新文件数量
-    LaunchedEffect(Unit) {
-        fileCounts = countFiles()
-    }
 }
 
 @Composable
 fun SettingsDialogSectionTitle(text: String) {
     Text(
         text = text,
-        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 20.sp),
         modifier = Modifier.padding(16.dp)
     )
 }
