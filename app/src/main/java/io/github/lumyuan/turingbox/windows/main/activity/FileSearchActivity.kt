@@ -21,19 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.foundation.layout.Column
-import io.github.lumyuan.turingbox.R
-import io.github.lumyuan.turingbox.windows.main.theme.AppTheme
-import io.github.lumyuan.turingbox.windows.main.theme.Color
-import io.github.lumyuan.turingbox.windows.main.theme.Theme
-import io.github.lumyuan.turingbox.windows.main.theme.AppThemeConfiguration.kt
-
 import java.io.File
 import android.os.Environment
 import androidx.compose.foundation.lazy.items
@@ -43,9 +36,7 @@ class FileSearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            TuringBoxTheme {
-                FileSearchContent()
-            }
+            FileSearchContent()
         }
     }
 }
@@ -60,7 +51,6 @@ fun FileSearchContent() {
     var fileToDelete by remember { mutableStateOf<File?>(null) }
     var fileCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var showLoadingDialog by remember { mutableStateOf(false) }
-    var selectedTheme by remember { mutableStateOf(AppTheme.LIGHT) } // 主题选择状态
 
     // 动态请求权限
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -131,7 +121,7 @@ fun FileSearchContent() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colors.background) // 使用 Theme 设置背景颜色
+            .background(Color.White) // 设置背景颜色为白色
     ) {
         // 顶部 App Bar
         TopAppBar(
@@ -141,7 +131,7 @@ fun FileSearchContent() {
                     Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
                 }
             },
-            backgroundColor = MaterialTheme.colors.primary,
+            backgroundColor = Color.Blue,
             contentColor = Color.White
         )
 
@@ -165,38 +155,6 @@ fun FileSearchContent() {
         }
 
         Divider() // 分割线
-
-        // 主题选择部分
-        Column(Modifier.verticalScroll(rememberScrollState())) {
-            SettingsDialogSectionTitle(text = stringResource(id = R.string.text_theme))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AppTheme.values().onEach {
-                    val tint = appTheme(themeType = it).primary
-                    val selected = it == selectedTheme
-                    FilterChip(
-                        selected = selected,
-                        onClick = { selectedTheme = it }, // 选择主题
-                        label = {
-                            Text(
-                                text = it.getRealName(),
-                                color = tint
-                            )
-                        },
-                        leadingIcon = {
-                            if (selected) {
-                                Icon(
-                                    imageVector = NiaIcons.Check,
-                                    contentDescription = null,
-                                    tint = tint
-                                )
-                            }
-                        },
-                        shape = RoundedCornerShape(28.dp),
-                        enabled = if (it == AppTheme.DYNAMIC_COLOR) Build.VERSION.SDK_INT >= Build.VERSION_CODES.S else true
-                    )
-                }
-            }
-        }
 
         // 正在加载对话框
         if (showLoadingDialog) {
