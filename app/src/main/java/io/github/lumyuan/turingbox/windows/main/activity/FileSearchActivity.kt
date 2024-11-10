@@ -21,11 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.window.DialogProperties
-import java.io.File
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.MaterialTheme
-import androidx.activity.compose.rememberLauncherForActivityResult 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import java.io.File
 
 class FileSearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,24 +45,15 @@ fun FileSearchContent() {
     var fileToDelete by remember { mutableStateOf<File?>(null) }
     var showLoadingDialog by remember { mutableStateOf(false) }
 
-    // 动态请求权限
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            Toast.makeText(context, "权限已获取", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "未获取权限", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    // 请求多个权限
+    // 动态请求多个权限
     val requestMultiplePermissionsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions[Manifest.permission.READ_MEDIA_IMAGES] == true &&
-            permissions[Manifest.permission.READ_MEDIA_VIDEO] == true &&
-            permissions[Manifest.permission.READ_MEDIA_AUDIO] == true) {
+        if (permissions[Manifest.permission.READ_EXTERNAL_STORAGE] == true &&
+            permissions[Manifest.permission.WRITE_EXTERNAL_STORAGE] == true &&
+            permissions[Manifest.permission.CAMERA] == true &&
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true) {
             Toast.makeText(context, "所有权限已授予", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "部分权限未授予", Toast.LENGTH_SHORT).show()
@@ -72,13 +62,16 @@ fun FileSearchContent() {
 
     // 初始化时检查文件访问权限
     LaunchedEffect(Unit) {
+        // 动态请求多个权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Android 13及以上版本
             requestMultiplePermissionsLauncher.launch(
                 arrayOf(
-                    Manifest.permission.READ_MEDIA_IMAGES,
-                    Manifest.permission.READ_MEDIA_VIDEO,
-                    Manifest.permission.READ_MEDIA_AUDIO
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
                 )
             )
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -88,7 +81,13 @@ fun FileSearchContent() {
             }
         } else {
             // Android 10及以下版本
-            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+            requestMultiplePermissionsLauncher.launch(
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.CAMERA
+                )
+            )
         }
     }
 
@@ -97,12 +96,18 @@ fun FileSearchContent() {
         AlertDialog(
             onDismissRequest = { /* 关闭对话框时的操作 */ },
             title = { Text("权限请求") },
-            text = { Text("应用需要访问您的存储权限，请允许权限以继续") },
+            text = { Text("应用需要访问您的存储和相机权限，请允许权限以继续") },
             confirmButton = {
                 Button(
                     onClick = {
                         // 启动权限请求
-                        requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+                        requestMultiplePermissionsLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.CAMERA
+                            )
+                        )
                         showPermissionDialog = false
                     }
                 ) {
@@ -115,8 +120,7 @@ fun FileSearchContent() {
                 ) {
                     Text("取消")
                 }
-            },
-            properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+            }
         )
     }
 
@@ -225,21 +229,5 @@ fun FileSearchContent() {
                 }
             )
         }
-    }
-}
-
-@Composable
-fun CustomButton(buttonText: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()  // 按钮宽度填满父容器
-            .padding(vertical = 8.dp), // 调整按钮的上下间距
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
-    ) {
-        Text(text = buttonText)
     }
 }
