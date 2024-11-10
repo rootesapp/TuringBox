@@ -22,6 +22,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
 
+import android.content.Intent
+import io.github.lumyuan.turingbox.windows.main.activity.FileSearchActivity
+
 @Composable
 fun FunctionPage() {
     val context = LocalContext.current
