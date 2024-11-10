@@ -71,9 +71,17 @@ fun FileSearchContent() {
     // 初始化时检查文件访问权限
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // 请求多权限
+            requestMultiplePermissionsLauncher.launch(
+                arrayOf(
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_MEDIA_VIDEO,
+                    Manifest.permission.READ_MEDIA_AUDIO
+                )
+            )
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // 处理外部存储权限
+            if (!Environment.isExternalStorageManager()) {
+                showPermissionDialog = true
+            }
         } else {
             requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
