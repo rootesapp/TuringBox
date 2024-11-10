@@ -5,7 +5,7 @@
     <!-- 存储访问权限 -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage"/>
+<uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
 
     <!-- 系统功能权限 -->
     <uses-permission android:name="android.permission.RECEIVE_USER_PRESENT"/>
