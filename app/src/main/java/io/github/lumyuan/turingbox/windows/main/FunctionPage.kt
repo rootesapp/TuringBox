@@ -101,17 +101,21 @@ fun FunctionPage() {
 }
 
 // 自定义按钮，应用 MaterialTheme 配色方案
+// 自定义按钮，更具 iOS 风格
 @Composable
 fun CustomButton(buttonText: String, onClick: () -> Unit) {
-    Button(
+    OutlinedButton(
         onClick = onClick,
         modifier = Modifier
-            .fillMaxWidth()  // 按钮宽度填满父容器
-            .padding(vertical = 8.dp), // 调整按钮的上下间距
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        shape = MaterialTheme.shapes.medium,  // 设置圆角边框
+        border = ButtonDefaults.outlinedBorder.copy(width = 1.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.primary,  // 字体颜色
+            containerColor = MaterialTheme.colorScheme.surface,  // 浅色背景
+        ),
+        elevation = ButtonDefaults.elevatedButtonElevation(0.dp)  // 去除阴影
     ) {
         Text(text = buttonText)
     }
