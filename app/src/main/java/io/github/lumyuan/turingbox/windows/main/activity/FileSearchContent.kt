@@ -41,8 +41,9 @@ fun FileSearchContent() {
     var fileType by remember { mutableStateOf("所有文件") }
     var fileList by remember { mutableStateOf(emptyList<File>()) }
     var showDialog by remember { mutableStateOf(false) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
 
-    // 请求权限
+    // 动态请求权限
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -53,11 +54,31 @@ fun FileSearchContent() {
         }
     }
 
-    // 在初始化时检查文件访问权限
+    // 动态请求多个权限
+    val requestMultiplePermissionsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.all { it.value }
+        if (allGranted) {
+            Toast.makeText(context, "所有权限已获取", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "未完全获取权限", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 初始化时检查文件访问权限
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestMultiplePermissionsLauncher.launch(
+                arrayOf(
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_MEDIA_VIDEO,
+                    Manifest.permission.READ_MEDIA_AUDIO
+                )
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!Environment.isExternalStorageManager()) {
-                showDialog = true
+                showPermissionDialog = true
             }
         } else {
             requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -101,9 +122,10 @@ fun FileSearchContent() {
             }
         }
 
-        if (showDialog) {
+        // Android 11 管理权限对话框
+        if (showPermissionDialog) {
             AlertDialog(
-                onDismissRequest = { showDialog = false },
+                onDismissRequest = { showPermissionDialog = false },
                 title = { Text("需要文件访问权限") },
                 text = { Text("请允许应用访问所有文件以进行搜索") },
                 confirmButton = {
@@ -115,14 +137,14 @@ fun FileSearchContent() {
                                 }
                                 context.startActivity(intent)
                             }
-                            showDialog = false
+                            showPermissionDialog = false
                         }
                     ) {
                         Text("前往设置")
                     }
                 },
                 dismissButton = {
-                    Button(onClick = { showDialog = false }) {
+                    Button(onClick = { showPermissionDialog = false }) {
                         Text("取消")
                     }
                 }
