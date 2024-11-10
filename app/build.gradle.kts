@@ -162,6 +162,13 @@ implementation("androidx.compose.ui:ui:1.4.0") // 或者你项目当前使用的
     implementation(libs.immersionbar.ui)
     implementation(libs.immersionbar.ui.ktx)
 
+implementation("androidx.activity:activity-compose:1.7.0")
+    implementation("androidx.compose.material:material:1.4.0")
+    implementation("androidx.compose.foundation:foundation:1.4.0")
+    implementation("androidx.compose.runtime:runtime:1.4.0")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0")
+
+
     // JNI
     implementation(project(":TuringBoxJNI"))
 
