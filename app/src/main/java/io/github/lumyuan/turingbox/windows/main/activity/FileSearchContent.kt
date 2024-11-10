@@ -1,7 +1,5 @@
 package io.github.lumyuan.turingbox.windows.main.activity
 
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
@@ -21,6 +19,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import java.io.File
 
 class FileSearchActivity : ComponentActivity() {
