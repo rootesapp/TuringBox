@@ -102,21 +102,19 @@ fun FunctionPage() {
 
 // 自定义按钮，应用 MaterialTheme 配色方案
 // 自定义按钮，更具 iOS 风格
+// 自定义按钮，使用默认颜色
+@Composable
 fun CustomButton(buttonText: String, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()  // 按钮宽度填满父容器
-            .padding(vertical = 8.dp), // 调整按钮的上下间距
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary, // containerColor 在 Material3 中使用
-            contentColor = MaterialTheme.colorScheme.onPrimary
-        ),
-        elevation = ButtonDefaults.elevatedButtonElevation() // 使用 elevation 来设置阴影
+            .padding(vertical = 8.dp) // 调整按钮的上下间距
     ) {
         Text(text = buttonText)
     }
 }
+
 
 // 使用 OkHttp 获取公告内容
 suspend fun fetchAnnouncement(): String {
