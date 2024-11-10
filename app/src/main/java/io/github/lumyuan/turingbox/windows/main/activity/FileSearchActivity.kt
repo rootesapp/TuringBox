@@ -1,35 +1,46 @@
 package io.github.lumyuan.turingbox.windows.main.activity
 
-import android.Manifest
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
-
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.ui.tooling.preview.Preview
+import io.github.lumyuan.turingbox.windows.main.theme.TuringBoxTheme
+import io.github.lumyuan.turingbox.windows.main.theme.AppTheme
+import io.github.lumyuan.turingbox.windows.main.theme.getRealName
+import io.github.lumyuan.turingbox.windows.main.theme.appTheme
 import java.io.File
+import android.os.Environment
+import android.Manifest
 
 class FileSearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            FileSearchContent()
+            TuringBoxTheme {
+                FileSearchContent()
+            }
         }
     }
 }
@@ -44,6 +55,7 @@ fun FileSearchContent() {
     var fileToDelete by remember { mutableStateOf<File?>(null) }
     var fileCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
     var showLoadingDialog by remember { mutableStateOf(false) }
+    var selectedTheme by remember { mutableStateOf(AppTheme.LIGHT) } // 主题选择状态
 
     // 动态请求权限
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -56,32 +68,12 @@ fun FileSearchContent() {
         }
     }
 
-    // 动态请求多个权限
-    val requestMultiplePermissionsLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.all { it.value }
-        if (allGranted) {
-            Toast.makeText(context, "所有权限已获取", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(context, "未完全获取权限", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     // 初始化时检查文件访问权限
     LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestMultiplePermissionsLauncher.launch(
-                arrayOf(
-                    Manifest.permission.READ_MEDIA_IMAGES,
-                    Manifest.permission.READ_MEDIA_VIDEO,
-                    Manifest.permission.READ_MEDIA_AUDIO
-                )
-            )
+            // 请求多权限
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                showPermissionDialog = true
-            }
+            // 处理外部存储权限
         } else {
             requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
@@ -89,19 +81,10 @@ fun FileSearchContent() {
 
     // 搜索文件
     fun searchFiles(type: String): List<File> {
-        val directory = File(Environment.getExternalStorageDirectory().toURI())
+        val directory = Environment.getExternalStorageDirectory()
         return directory.walkTopDown().filter { file ->
-            when (type) {
-                "音乐" -> file.extension in listOf("mp3", "wav", "flac")
-                "视频" -> file.extension in listOf("mp4", "mkv", "avi")
-                "安装包" -> file.extension in listOf("apk")
-                "文档" -> file.extension in listOf("txt", "pdf", "docx")
-                "QQ文件" -> file.path.contains("/tencent/QQfile_recv/")
-                "微信文件" -> file.path.contains("/tencent/MicroMsg/")
-                "空目录" -> file.isDirectory && file.listFiles().isNullOrEmpty()
-                "空文件" -> file.length() == 0L
-                else -> true // 搜索所有文件
-            }
+            // 文件过滤逻辑
+            true // 搜索所有文件
         }.toList()
     }
 
@@ -118,19 +101,22 @@ fun FileSearchContent() {
         showLoadingDialog = false
     }
 
-    // 文件删除确认对话框
-    fun showDeleteDialog(file: File) {
-        fileToDelete = file
-        showDialog = true
-    }
-
     // UI部分
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(
-            text = "文件搜索",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colors.background) // 使用 Theme 设置背景颜色
+    ) {
+        // 顶部 App Bar
+        TopAppBar(
+            title = { Text("文件搜索") },
+            navigationIcon = {
+                IconButton(onClick = { /* 返回功能*/ }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "返回")
+                }
+            },
+            backgroundColor = MaterialTheme.colors.primary,
+            contentColor = Color.White
         )
 
         // 文件分类按钮
@@ -148,6 +134,40 @@ fun FileSearchContent() {
                     IconButton(onClick = { searchAndShowFiles(category) }) {
                         Icon(Icons.Default.Search, contentDescription = "搜索")
                     }
+                }
+            }
+        }
+
+        Divider() // 分割线
+
+        // 主题选择部分
+        Column(Modifier.verticalScroll(rememberScrollState())) {
+            SettingsDialogSectionTitle(text = stringResource(id = R.string.text_theme))
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AppTheme.values().onEach {
+                    val tint = appTheme(themeType = it).primary
+                    val selected = it == selectedTheme
+                    FilterChip(
+                        selected = selected,
+                        onClick = { selectedTheme = it }, // 选择主题
+                        label = {
+                            Text(
+                                text = it.getRealName(),
+                                color = tint
+                            )
+                        },
+                        leadingIcon = {
+                            if (selected) {
+                                Icon(
+                                    imageVector = NiaIcons.Check,
+                                    contentDescription = null,
+                                    tint = tint
+                                )
+                            }
+                        },
+                        shape = RoundedCornerShape(28.dp),
+                        enabled = if (it == AppTheme.DYNAMIC_COLOR) Build.VERSION.SDK_INT >= Build.VERSION_CODES.S else true
+                    )
                 }
             }
         }
@@ -197,4 +217,13 @@ fun FileSearchContent() {
     LaunchedEffect(Unit) {
         fileCounts = countFiles()
     }
+}
+
+@Composable
+fun SettingsDialogSectionTitle(text: String) {
+    Text(
+        text = text,
+        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
+        modifier = Modifier.padding(16.dp)
+    )
 }
