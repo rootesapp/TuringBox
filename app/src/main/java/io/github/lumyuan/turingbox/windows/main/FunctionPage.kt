@@ -95,8 +95,10 @@ fun FunctionPage() {
         Spacer(modifier = Modifier.height(8.dp))
 
         CustomButton("文件功能") {
-            Toast.makeText(context, "你点了 文件功能", Toast.LENGTH_SHORT).show()
-        }
+    val intent = Intent(context, FileSearchActivity::class.java)
+    context.startActivity(intent)
+}
+
     }
 }
 
