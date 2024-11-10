@@ -1,136 +1,196 @@
-package io.github.lumyuan.turingbox.windows.main
+package io.github.lumyuan.turingbox.windows.main.activity
 
-import androidx.compose.runtime.*
-import androidx.compose.material3.*
-
+import android.Manifest
+import android.os.Build
+import android.os.Bundle
+import android.os.Environment
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Card
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
+import androidx.compose.ui.unit.sp
+import java.io.File
+
+class FileSearchActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            FileSearchContent()
+        }
+    }
+}
 
 @Composable
-fun FunctionPage() {
+fun FileSearchContent() {
     val context = LocalContext.current
+    var fileType by remember { mutableStateOf("所有文件") }
+    var fileList by remember { mutableStateOf(emptyList<File>()) }
+    var showDialog by remember { mutableStateOf(false) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    var fileToDelete by remember { mutableStateOf<File?>(null) }
+    var fileCounts by remember { mutableStateOf<Map<String, Int>>(emptyMap()) }
+    var showLoadingDialog by remember { mutableStateOf(false) }
 
-    // 创建滚动状态
-    val scrollState = rememberScrollState()
+    // 动态请求权限
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            Toast.makeText(context, "权限已获取", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "未获取权限", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-    // 假设我们用一个异步操作来获取公告内容
-    val announcement = remember { mutableStateOf("加载中...") }
+    // 动态请求多个权限
+    val requestMultiplePermissionsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.all { it.value }
+        if (allGranted) {
+            Toast.makeText(context, "所有权限已获取", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "未完全获取权限", Toast.LENGTH_SHORT).show()
+        }
+    }
 
-    // 模拟从远程读取公告内容
+    // 初始化时检查文件访问权限
     LaunchedEffect(Unit) {
-        announcement.value = fetchAnnouncement()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestMultiplePermissionsLauncher.launch(
+                arrayOf(
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_MEDIA_VIDEO,
+                    Manifest.permission.READ_MEDIA_AUDIO
+                )
+            )
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                showPermissionDialog = true
+            }
+        } else {
+            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
     }
 
-    // 使用 Column 并包裹在 verticalScroll 中
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState) // 使 Column 可垂直滚动
-    ) {
-        // 顶部公告
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "公告", // 标记为公告
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                Text(
-                    text = announcement.value, // 显示公告内容
-                    style = MaterialTheme.typography.bodyMedium
-                )
+    // 搜索文件
+    fun searchFiles(type: String): List<File> {
+        val directory = Environment.getExternalStorageDirectory()
+        return directory.walkTopDown().filter { file ->
+            when (type) {
+                "音乐" -> file.extension in listOf("mp3", "wav", "flac")
+                "视频" -> file.extension in listOf("mp4", "mkv", "avi")
+                "安装包" -> file.extension in listOf("apk")
+                "文档" -> file.extension in listOf("txt", "pdf", "docx")
+                "QQ文件" -> file.path.contains("/tencent/QQfile_recv/")
+                "微信文件" -> file.path.contains("/tencent/MicroMsg/")
+                "空目录" -> file.isDirectory && file.listFiles().isNullOrEmpty()
+                "空文件" -> file.length() == 0L
+                else -> true // 搜索所有文件
+            }
+        }.toList()
+    }
+
+    // 计算文件数量
+    fun countFiles(): Map<String, Int> {
+        val categories = listOf("音乐", "视频", "安装包", "文档", "QQ文件", "微信文件", "空目录", "空文件")
+        return categories.associateWith { category -> searchFiles(category).size }
+    }
+
+    // 搜索并展示文件
+    fun searchAndShowFiles(type: String) {
+        showLoadingDialog = true
+        fileList = searchFiles(type)
+        showLoadingDialog = false
+    }
+
+    // 文件删除确认对话框
+    fun showDeleteDialog(file: File) {
+        fileToDelete = file
+        showDialog = true
+    }
+
+    // UI部分
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text(
+            text = "文件搜索",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        // 文件分类按钮
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            val categories = listOf("音乐", "视频", "安装包", "文档", "QQ文件", "微信文件", "空目录", "空文件")
+            items(categories.size) { index ->
+                val category = categories[index]
+                val count = fileCounts[category] ?: 0
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = category, modifier = Modifier.weight(1f))
+                    Text(text = "$count 文件", modifier = Modifier.align(Alignment.CenterVertically))
+                    IconButton(onClick = { searchAndShowFiles(category) }) {
+                        Icon(Icons.Default.Search, contentDescription = "搜索")
+                    }
+                }
             }
         }
 
-        // 以下是功能按钮部分
-        CustomButton("OTG功能") {
-            Toast.makeText(context, "你点了 OTG功能", Toast.LENGTH_SHORT).show()
+        // 正在加载对话框
+        if (showLoadingDialog) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = { Text("正在加载") },
+                text = { Text("文件正在加载，请稍候...") },
+                confirmButton = {
+                    Button(onClick = { }) {
+                        Text("关闭")
+                    }
+                }
+            )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        CustomButton("Magisk功能") {
-            Toast.makeText(context, "你点了 Magisk功能", Toast.LENGTH_SHORT).show()
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        CustomButton("Lsposed/Xposed") {
-            Toast.makeText(context, "你点了 Lsposed/Xposed", Toast.LENGTH_SHORT).show()
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        CustomButton("系统功能") {
-            Toast.makeText(context, "你点了 系统功能", Toast.LENGTH_SHORT).show()
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        CustomButton("界面功能") {
-            Toast.makeText(context, "你点了 界面功能", Toast.LENGTH_SHORT).show()
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        CustomButton("文件功能") {
-            Toast.makeText(context, "你点了 文件功能", Toast.LENGTH_SHORT).show()
+        // 文件删除确认对话框
+        if (showDialog && fileToDelete != null) {
+            AlertDialog(
+                onDismissRequest = { showDialog = false },
+                title = { Text("确认删除文件") },
+                text = { Text("确定要删除 ${fileToDelete!!.name} 吗？") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            fileToDelete?.delete()
+                            Toast.makeText(context, "${fileToDelete!!.name} 已删除", Toast.LENGTH_SHORT).show()
+                            showDialog = false
+                            fileToDelete = null
+                        }
+                    ) {
+                        Text("删除")
+                    }
+                },
+                dismissButton = {
+                    Button(onClick = { showDialog = false }) {
+                        Text("取消")
+                    }
+                }
+            )
         }
     }
-}
 
-@Composable
-fun CustomButton(buttonText: String, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()  // 按钮宽度填满父容器
-            .padding(vertical = 8.dp), // 调整按钮的上下间距
-        colors = ButtonDefaults.buttonColors() // 使用默认颜色
-    ) {
-        Text(text = buttonText)
-    }
-}
-
-// 使用 OkHttp 获取公告内容
-suspend fun fetchAnnouncement(): String {
-    val client = OkHttpClient()  // 创建 OkHttp 客户端
-    val request = Request.Builder()
-        .url("https://rootes.top/公告.txt")  // 设置公告文本的 URL
-        .build()
-
-    return try {
-        // 异步请求，读取响应体
-        withContext(Dispatchers.IO) {
-            val response: Response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                response.body?.string() ?: "公告内容为空"
-            } else {
-                "公告加载失败: ${response.code}"
-            }
-        }
-    } catch (e: Exception) {
-        "公告加载失败，请稍后再试"
+    // 更新文件数量
+    LaunchedEffect(Unit) {
+        fileCounts = countFiles()
     }
 }
